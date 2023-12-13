@@ -20,6 +20,10 @@
 <script lang="ts">
   import { onMount } from "svelte"
 
+  function step(time: number) {
+    requestAnimationFrame(step)
+  }
+
   onMount(async () => {
     const canvas = <HTMLCanvasElement> document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
@@ -28,17 +32,24 @@
     const observer = new ResizeObserver((entries) => {
       
       const entry = entries.find((entry) => entry.target === canvas)
-      if (entry!=undefined) {
-        canvas.width = entry.devicePixelContentBoxSize[0].inlineSize
-        canvas.height = entry.devicePixelContentBoxSize[0].blockSize
+      if (entry==undefined) {
+        return
       }
 
+      let width = entry.devicePixelContentBoxSize[0].inlineSize
+      let height = entry.devicePixelContentBoxSize[0].blockSize
+      console.log(width, height)
+
+      canvas.width = width
+      canvas.height = height
+
       ctx?.beginPath();
-      ctx?.arc(2*100, 2*75, 2*50, 0, 2* 2 * Math.PI);
-      ctx?.stroke();
+      ctx?.arc(width/2, height/2, 2*50, 0, 2 * Math.PI);
+      ctx?.fill();
     });
 
     observer.observe(canvas)
+    requestAnimationFrame(step)
 
   })
 
@@ -49,7 +60,7 @@
     const clientHeight = canvas.getBoundingClientRect().bottom - canvas.getBoundingClientRect().top
     const x = e.pageX * canvas.width / clientWidth
     const y = e.pageY * canvas.height / clientHeight
-    console.log(clientWidth, canvas.width )
+    //console.log(clientWidth, canvas.width )
     if (ctx) {
       const r = 0
       const g = 0
@@ -66,6 +77,5 @@
   }
 </script>
 <body>
-    <canvas on:mousemove={canvasMouseMove} on:focus id="canvas"></canvas>
+    <canvas style="position:absolute;" on:mousemove={canvasMouseMove} on:focus id="canvas"></canvas>
 </body>
-
