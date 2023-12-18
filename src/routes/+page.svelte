@@ -17,65 +17,82 @@
   }
 
 </style>
+
 <script lang="ts">
   import { onMount } from "svelte"
 
-  function step(time: number) {
-    requestAnimationFrame(step)
-  }
+  function drawRoundedPolygon(  ctx: CanvasRenderingContext2D,
+                                x: number,
+                                y: number,
+                                radius: number,
+                                rotation: number,
+                                cornerPercent: number,
+                                color: string,
+                                count: number ) {
+
+
+    function getPolygonCorner( index: number, count: number ) {
+      const angle = ( index + 0.5 ) * 2 * Math.PI / count
+      return [ Math.sin( angle ), Math.cos( angle ) ]
+    }
+
+    function blend( p1: number[], p2: number[], t: number ) {
+      return [ p1[ 0 ] * ( 1 - t ) + p2[ 0 ] * ( t ),
+               p1[ 1 ] * ( 1 - t ) + p2[ 1 ] * ( t ) ]
+    }
+
+    ctx.save( )
+    ctx.translate( x, y )
+    ctx.scale( radius, radius )
+    ctx.rotate( rotation * Math.PI / 180 )
+    ctx.beginPath( )
+
+    const points = []
+
+    for ( let i = 0; i < count; i++ )
+      points.push( getPolygonCorner( i, count ) )
+    
+    for ( let i = 0; i < count; i++ ) {
+
+      const prevCorner = points[ ( i + 0 ) % count ]
+      const thisCorner = points[ ( i + 1 ) % count ]
+      const nextCorner = points[ ( i + 2 ) % count ]
+
+      const q1 = blend( thisCorner, prevCorner, cornerPercent / 200 )
+      const q2 = blend( thisCorner, nextCorner, cornerPercent / 200 )
+
+      ctx.lineTo( q1[ 0 ], q1[ 1 ] );
+      ctx.quadraticCurveTo( thisCorner[ 0 ], thisCorner[ 1 ], q2[ 0 ], q2[ 1 ] ) 
+    }
+    
+    ctx.closePath( );
+    ctx.shadowBlur = 50
+	  ctx.shadowColor=  color
+	  ctx.shadowOffsetX = ctx.shadowOffsetY = 0
+    ctx.fillStyle = color
+    ctx.fill( );
+    ctx.restore( )
+}
 
   onMount(async () => {
     const canvas = <HTMLCanvasElement> document.getElementById("canvas");
-    const ctx = canvas.getContext("2d");
+    const ctx: CanvasRenderingContext2D  = canvas.getContext("2d")!;
 
-
-    const observer = new ResizeObserver((entries) => {
-      
-      const entry = entries.find((entry) => entry.target === canvas)
-      if (entry==undefined) {
-        return
-      }
-
-      let width = entry.devicePixelContentBoxSize[0].inlineSize
-      let height = entry.devicePixelContentBoxSize[0].blockSize
-      console.log(width, height)
-
-      canvas.width = width
-      canvas.height = height
-
-      ctx?.beginPath();
-      ctx?.arc(width/2, height/2, 2*50, 0, 2 * Math.PI);
-      ctx?.fill();
-    });
-
-    observer.observe(canvas)
-    requestAnimationFrame(step)
-
-  })
-
-  function canvasMouseMove(e: MouseEvent) {
-    const canvas = ( <HTMLCanvasElement>e.target )
-    const ctx = canvas.getContext("2d");
-    const clientWidth = canvas.getBoundingClientRect().right - canvas.getBoundingClientRect().left
-    const clientHeight = canvas.getBoundingClientRect().bottom - canvas.getBoundingClientRect().top
-    const x = e.pageX * canvas.width / clientWidth
-    const y = e.pageY * canvas.height / clientHeight
-    //console.log(clientWidth, canvas.width )
-    if (ctx) {
-      const r = 0
-      const g = 0
-      const b = 0
-      const a = 255
-      ctx.fillStyle = "rgba("+r+","+g+","+b+","+(a/255)+")";
-      ctx.fillRect( x, y,  2, 2 );
+    function doDraw() {
+      ctx.canvas.width  = window.innerWidth;
+      ctx.canvas.height = window.innerHeight;
+      drawRoundedPolygon(ctx, canvas.width/2, canvas.height/2, canvas.height/4, 45, 33, "#E49641", 6)
     }
-    
-    //console.log(e)
-    //let x = e.pageX
-    //let y = e.pageY
-    
-  }
+
+    function step(time: number) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      doDraw()
+      requestAnimationFrame(step)
+    }
+
+    requestAnimationFrame(step)
+  })
 </script>
 <body>
-    <canvas style="position:absolute;" on:mousemove={canvasMouseMove} on:focus id="canvas"></canvas>
+    <canvas style="position:absolute;" on:focus id="canvas"></canvas>
 </body>
