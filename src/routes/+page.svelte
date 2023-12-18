@@ -27,9 +27,6 @@
 
   function drawRoundedRegularPolygon(
     ctx: CanvasRenderingContext2D,
-    x: number,
-    y: number,
-    radius: number,
     rotation: number,
     cornerPercent: number,
     shadowBlur: number,
@@ -48,8 +45,6 @@
 
 
     ctx.save( )
-    ctx.translate( x, y )
-    ctx.scale( radius, radius )
     ctx.rotate( rotation * Math.PI / 180 )
 
     drawRoundedPolygon( ctx, cornerPercent, corners )
@@ -90,6 +85,18 @@
 
   }
 
+  function drawText( ctx: CanvasRenderingContext2D, text: string ) {
+    ctx.font = "1px Montserrat";
+    ctx.fillStyle = "white"
+    const metrics = ctx.measureText( text )
+    const textWidth = metrics.width
+    const actualHeight = 0.72
+    ctx.shadowBlur = 10
+    ctx.shadowColor = "white"
+    ctx.shadowOffsetX = ctx.shadowOffsetY = 0
+    ctx.fillText( text, (0-textWidth)/2, (0+actualHeight)/2)
+  }
+
   onMount(async () => {
     const canvas = <HTMLCanvasElement> document.getElementById("canvas");
     const ctx: CanvasRenderingContext2D  = canvas.getContext("2d")!;
@@ -97,18 +104,12 @@
     function doDraw() {
       ctx.canvas.width  = window.innerWidth;
       ctx.canvas.height = window.innerHeight;
-      drawRoundedRegularPolygon(ctx, canvas.width/2, canvas.height/2, canvas.height/2, 45, 33, 50, "#E49641", 3)
-      ctx.font = "200px Montserrat";
-      ctx.fillStyle = "white"
-      const text = "12"
-      const metrics = ctx.measureText( text )
-      const textWidth = metrics.width
-      const fontHeight = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent
-      const actualHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent
-      ctx.shadowBlur = 10
-	    ctx.shadowColor = "white"
-	    ctx.shadowOffsetX = ctx.shadowOffsetY = 0
-      ctx.fillText( text, (canvas.width-textWidth)/2, (canvas.height+actualHeight)/2)
+      ctx.save( )
+      ctx.translate( canvas.width/2, canvas.height/2 )
+      ctx.scale( canvas.height / 2, canvas.height / 2)
+      drawRoundedRegularPolygon( ctx, 45, 33, 20, "#E49641", 3 )
+      drawText( ctx, "11" )
+      ctx.restore( )
     }
 
     function step(time: number) {
